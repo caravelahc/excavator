@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "moita-scrapy"
+version = "0.1.0"
+description = ""
+authors = ["Ranieri Althoff <ranisalt@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "*"
+scrapy = "^1.5.1"
+twisted = { git = "https://github.com/twisted/twisted", branch = "9384-remove-async-param" }
+psycopg2 = "^2.7"
+
+[tool.poetry.dev-dependencies]
