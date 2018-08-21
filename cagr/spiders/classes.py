@@ -28,10 +28,11 @@ class ClassesSpider(scrapy.Spider):
                 name = opt.css('::text').extract_first().strip()[5:]
                 if name == self.campus:
                     self.logger.info(f'Found campus {name} ID {id}')
+                    self.campus = id
                     return scrapy.FormRequest.from_response(
                         response, 'formBusca', formdata={
                             'AJAXREQUEST': '_viewRoot',
-                            'formBusca:selectCampus': id,
+                            'formBusca:selectCampus': self.campus,
                             'formBusca:selectSemestre': self.term,
                         },
                         callback=self.parse, dont_filter=True)
@@ -46,6 +47,8 @@ class ClassesSpider(scrapy.Spider):
 
     def parse(self, response):
         current_page = response.css('.rich-datascr-act::text').extract_first()
+        if current_page is None:
+            return
         self.logger.info(f'Parsing page {current_page}')
 
         page_buttons = response.css('.rich-datascr-act + .rich-datascr-inact')
@@ -54,6 +57,8 @@ class ClassesSpider(scrapy.Spider):
                         self.initial_form, 'formBusca', formdata={
                             'AJAXREQUEST': '_viewRoot',
                             'formBusca:dataScroller1': 'fastforward',
+                            'formBusca:selectCampus': self.campus,
+                            'formBusca:selectSemestre': self.term,
                         },
                         callback=self.parse, dont_filter=True)
 
