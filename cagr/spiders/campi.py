@@ -18,6 +18,6 @@ class CampiSpider(scrapy.Spider):
     def parse(self, response):
         for opt in response.css('[id="formBusca:selectCampus"] option'):
             id = opt.css('::attr(value)').extract_first().strip()
-            abbrev = opt.css('::text').extract_first().strip()[5:]
+            code = opt.css('::text').extract_first().strip()[5:]
 
-            yield Campus(id=int(id), abbrev=abbrev)
+            yield Campus(id=int(id), code=code)

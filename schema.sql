@@ -1,10 +1,10 @@
 -- DROP TABLE IF EXISTS campi CASCADE;
 CREATE TABLE IF NOT EXISTS campi(
     id smallint NOT NULL,
-    abbrev character(3) NOT NULL,
+    code character(3) NOT NULL,
     name text,
     CONSTRAINT campi_pk PRIMARY KEY (id),
-    CONSTRAINT campi_uniq UNIQUE (abbrev)
+    CONSTRAINT campi_uniq UNIQUE (code)
 );
 
 -- DROP TABLE IF EXISTS programs CASCADE;
@@ -18,11 +18,13 @@ CREATE TABLE IF NOT EXISTS programs(
 
 -- DROP TABLE IF EXISTS courses CASCADE;
 CREATE TABLE IF NOT EXISTS courses(
-    id character(7) NOT NULL,
+    id serial NOT NULL,
+    code character(7) NOT NULL,
     campus_id smallint NOT NULL,
     name text NOT NULL,
     load smallint NOT NULL,
     CONSTRAINT courses_pk PRIMARY KEY (id),
+    CONSTRAINT courses_uniq UNIQUE (code),
     CONSTRAINT campi_fk FOREIGN KEY (campus_id) REFERENCES campi (id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
 
@@ -36,16 +38,16 @@ CREATE TABLE IF NOT EXISTS professors(
 -- DROP TABLE IF EXISTS classes CASCADE;
 CREATE TABLE IF NOT EXISTS classes(
     id serial NOT NULL,
-    name character varying(6) NOT NULL,
+    code character varying(6) NOT NULL,
     term character(5) NOT NULL,
-    course_id character(7) NOT NULL,
+    course_id integer NOT NULL,
     capacity smallint NOT NULL,
     enrolled smallint NOT NULL,
     special smallint NOT NULL,
     pending smallint NOT NULL,
     remaining smallint NOT NULL,
     CONSTRAINT classes_pk PRIMARY KEY (id),
-    CONSTRAINT classes_uniq UNIQUE (name,term,course_id),
+    CONSTRAINT classes_uniq UNIQUE (code, term, course_id),
     CONSTRAINT courses_fk FOREIGN KEY (course_id) REFERENCES courses (id) ON DELETE RESTRICT ON UPDATE CASCADE
 );
 

@@ -10,16 +10,16 @@ import scrapy
 
 class Campus(scrapy.Item):
     id = scrapy.Field(serializer=int)
-    abbrev = scrapy.Field(serializer=str)
+    code = scrapy.Field(serializer=str)
 
 
 class College(scrapy.Item):
-    id = scrapy.Field(serializer=str)
+    code = scrapy.Field(serializer=str)
     name = scrapy.Field(serializer=str)
 
 
 class Department(scrapy.Item):
-    id = scrapy.Field(serializer=str)
+    code = scrapy.Field(serializer=str)
     name = scrapy.Field(serializer=str)
 
 
@@ -29,7 +29,7 @@ class Program(scrapy.Item):
 
 
 class Course(scrapy.Item):
-    id = scrapy.Field(serializer=str)
+    code = scrapy.Field(serializer=str)
     campus = scrapy.Field(serializer=str)
     name = scrapy.Field(serializer=str)
     load = scrapy.Field(serializer=int)
@@ -41,7 +41,7 @@ class Professor(scrapy.Item):
 
 
 class Class(scrapy.Item):
-    name = scrapy.Field(serializer=str)
+    code = scrapy.Field(serializer=str)
     term = scrapy.Field(serializer=str)
     course_id = scrapy.Field(serializer=str)
     capacity = scrapy.Field(serializer=int)

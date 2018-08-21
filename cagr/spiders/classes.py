@@ -61,9 +61,9 @@ class ClassesSpider(scrapy.Spider):
             cells = row.xpath('./*')
 
             yield Course(
-                id=cells[3].css('::text').extract_first(),
+                code=cells[3].css('::text').extract_first().strip(),
                 campus=self.campus,
-                name=cells[5].css('::text').extract_first(),
+                name=cells[5].css('::text').extract_first().strip(),
                 load=int(cells[6].css('::text').extract_first()),
             )
 
@@ -72,7 +72,7 @@ class ClassesSpider(scrapy.Spider):
                 *_, lattes_id = professor.css('::attr(href)').extract_first().split('/')
                 lattes_id = int(lattes_id)
 
-                name = professor.css('::text').extract_first()
+                name = professor.css('::text').extract_first().strip()
 
                 yield Professor(id=lattes_id, name=name)
                 professors.add(lattes_id)
@@ -81,7 +81,7 @@ class ClassesSpider(scrapy.Spider):
             pending = cells[11].css('::text').extract_first()
 
             yield Class(
-                name=cells[4].css('::text').extract_first(),
+                code=cells[4].css('::text').extract_first(),
                 term=self.term,
                 course_id=cells[3].css('::text').extract_first(),
                 capacity=int(cells[7].css('::text').extract_first()),

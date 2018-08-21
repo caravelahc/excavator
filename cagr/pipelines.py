@@ -17,10 +17,10 @@ class DedupPipeline():
 
     def process_item(self, item, spider):
         if isinstance(item, Course):
-            if item['id'] in self.courses_seen:
-                raise DropItem(f'Duplicate course found: {item["id"]}')
+            if item['code'] in self.courses_seen:
+                raise DropItem(f'Duplicate course found: {item["code"]}')
             else:
-                self.courses_seen.add(item['id'])
+                self.courses_seen.add(item['code'])
         elif isinstance(item, Professor):
             if item['id'] in self.professors_seen:
                 raise DropItem(f'Duplicate professor found: {item["id"]}')
@@ -51,56 +51,55 @@ class PgsqlPipeline():
                                            user=self.user,
                                            password=self.password,
                                            dbname=self.dbname)
-        self.cursor = self.connection.cursor()
 
-        with open('schema.sql') as fp:
-            self.cursor.execute(fp.read())
+        with open('schema.sql') as fp, self.connection.cursor() as cursor:
+            cursor.execute(fp.read())
         self.connection.commit()
 
     def close_spider(self, spider):
-        self.cursor.close()
         self.connection.close()
 
     def process_item(self, item, spider):
-        if isinstance(item, Campus):
-            self.cursor.execute("""
-                INSERT INTO campi(id, abbrev)
-                VALUES (%s, %s)
-                ON CONFLICT DO NOTHING
-            """, (item['id'], item['abbrev']))
-        elif isinstance(item, Course):
-            self.cursor.execute("""
-                INSERT INTO courses(id, campus_id, name, load)
-                SELECT %s, c.id, %s, %s FROM campi c WHERE c.abbrev = %s
-                ON CONFLICT DO NOTHING
-            """, (item['id'], item['name'], item['load'], item['campus']))
-        elif isinstance(item, Class):
-            self.cursor.execute("""
-                INSERT INTO classes(name, term, course_id, capacity, enrolled, special, pending, remaining)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT ON CONSTRAINT classes_uniq DO UPDATE
-                    SET capacity = excluded.capacity,
-                        enrolled = excluded.enrolled,
-                        special = excluded.special,
-                        pending = excluded.pending,
-                        remaining = excluded.remaining
-                RETURNING id
-            """, (item['name'], item['term'], item['course_id'],
-                  item['capacity'], item['enrolled'], item['special'],
-                  item['pending'], item['remaining']))
-            class_id, *_ = self.cursor.fetchone()
-            for professor_id in item['professors']:
-                self.cursor.execute("""
-                    INSERT INTO classes_professors(class_id, professor_id)
+        with self.connection.cursor() as cursor:
+            if isinstance(item, Campus):
+                cursor.execute("""
+                    INSERT INTO campi(id, code)
                     VALUES (%s, %s)
                     ON CONFLICT DO NOTHING
-                """, (class_id, professor_id))
-        elif isinstance(item, Professor):
-            self.cursor.execute("""
-                INSERT INTO professors(id, name)
-                VALUES (%s, %s)
-                ON CONFLICT DO NOTHING
-            """, (item['id'], item['name']))
+                """, (item['id'], item['code']))
+            elif isinstance(item, Course):
+                cursor.execute("""
+                    INSERT INTO courses(code, campus_id, name, load)
+                    VALUES (%s, %s, %s, %s)
+                    ON CONFLICT DO NOTHING
+                """, (item['code'], spider.campus, item['name'], item['load']))
+            elif isinstance(item, Class):
+                cursor.execute("""
+                    INSERT INTO classes(code, term, course_id, capacity, enrolled, special, pending, remaining)
+                    SELECT %s, %s, c.id, %s, %s, %s, %s, %s FROM courses c WHERE c.code = %s
+                    ON CONFLICT ON CONSTRAINT classes_uniq DO UPDATE
+                        SET capacity = excluded.capacity,
+                            enrolled = excluded.enrolled,
+                            special = excluded.special,
+                            pending = excluded.pending,
+                            remaining = excluded.remaining
+                    RETURNING id
+                """, (item['code'], item['term'], item['capacity'],
+                      item['enrolled'], item['special'], item['pending'],
+                      item['remaining'], item['course_id']))
+                class_id, *_ = cursor.fetchone()
+                for professor_id in item['professors']:
+                    cursor.execute("""
+                        INSERT INTO classes_professors(class_id, professor_id)
+                        VALUES (%s, %s)
+                        ON CONFLICT DO NOTHING
+                    """, (class_id, professor_id))
+            elif isinstance(item, Professor):
+                cursor.execute("""
+                    INSERT INTO professors(id, name)
+                    VALUES (%s, %s)
+                    ON CONFLICT DO NOTHING
+                """, (item['id'], item['name']))
 
         self.connection.commit()
         return item
